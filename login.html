@@ -40,7 +40,7 @@
 
   <!-- 模态框 -->
 
-  <div class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal fade" tabindex="-1" role="dialog" id="myModal">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -101,6 +101,19 @@
               //登录成功,跳转首页
               //(1)修改提示文本
               $('.modal-body>p').text('登录成功');
+              //(2)弹出模态框
+              $('#myModal').modal();
+              //(3)给模态框注册消失事件
+              $('#myModal').on('hidden.bs.modal',function(){
+                //一： 将服务器返回的token存储到 localstorage
+                localStorage.setItem('token',backData.token);
+
+                window.location.href = './index.html';
+              });
+            } else {
+              //失败 提示用户
+              //(1)修改提示文本
+              $('.modal-body>p').text(backData.msg);
               //(2)弹出模态框
               $('#myModal').modal();
             }
