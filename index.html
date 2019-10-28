@@ -118,6 +118,7 @@
                 $('.level02 > li').click(function(){
                     //4.1排他思想修改样式
                     $(this).addClass('active').siblings().removeClass('active');
+                    $(this).parent().siblings().removeClass('active');
                 });
 
         });

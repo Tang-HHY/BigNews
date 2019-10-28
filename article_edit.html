@@ -14,6 +14,14 @@
     <script src="./libs/jquery-1.12.4.min.js"></script>
     <!-- 模板引擎 -->
     <script src="./libs/template-web.js"></script>
+
+    <!-- 导包 -->
+    <link type="text/css" rel="stylesheet" href="./libs/jedate/css/jeDate-test.css">
+    <link type="text/css" rel="stylesheet" href="./libs/jedate/css/jedate.css">
+    <script type="text/javascript" src="./libs/jedate/js/jedate.js"></script>
+    <script src="./libs/tinymce/tinymce.min.js"></script>
+    <!-- jedate + tinymce -->
+    <script src="./libs/config.js"></script>
 </head>
 
 <body>
@@ -51,22 +59,144 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label">发布时间：</label>
                     <div class="col-sm-4">
+                        <!-- 日期插件 -->
+                        <div class="jeitem">
+                            <div class="jeinpbox">
+                                <input type="text" class="jeinput" id="testico" placeholder="YYYY-MM-DD">
+                                <div class="icons jebtns"
+                                    onclick="jeDate('#testico',{trigger:false,format: 'YYYY-MM-DD',theme:{ bgcolor:'#f12066',color:'#ffffff', pnColor:'#00CCFF'},})">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
+                        <!-- 富文本编辑器 -->
+                        <textarea id="mytextarea" name="mytextarea" style="height: 350px">文章内容</textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success btn-edit">修改</button>
+                        <button type="submit" class="btn btn-success btn-release">发布</button>
                         <button type="submit" class="btn btn-default btn-draft">存为草稿</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- 文章分类模板 -->
+    <script id="cat_list" type="text/html">
+        {{ each data v}}
+        <option value="{{ v.id }}">{{ v.name }}</option>
+        {{ /each }}
+    </script>
+
+    <script src="./libs/https.js"></script>
+    <script>
+        //入口函数
+        $(function () {
+            //使用jedate + tinymce插件完成页面布局
+
+            //获取从article_list.html 页面 传递过来的参数id
+            var id = window.location.href.split('=')[1];
+            console.log(id);
+
+            //2. 查询所有文章分类
+            $.ajax({
+                url: BigNew.category_list,
+                type: 'get',
+                dataType: 'json',
+                success: function (backData) {
+                    console.log(backData);
+
+                    //模板引擎渲染页面
+                    $('.category').html(template('cat_list', backData));
+                }
+            });
+
+            //3.查询文章详细信息 渲染页面
+            $.ajax({
+                url: BigNew.article_search,
+                type: 'get',
+                dataType: 'json',
+                data: { id: id },
+                success: function (backData) {
+                    console.log(backData);
+                    //渲染页面
+                    $('.title').val(backData.data.title);
+                    $('.category').val(backData.data.categoryId);
+                    $('#testico').val(backData.data.date);
+                    $('.article_cover').attr('src', backData.data.cover);
+                    /*
+                        注意点: 如果ajax网速极快,可能导致网络请求响应完成但是页面内容还没有加载完毕
+                        解决方案: 延迟加载
+                    */
+                    setTimeout(function () {
+                        tinymce.activeEditor.setContent(backData.data.content);
+                    }, 500);
+
+                }
+            });
+
+
+            //4.文件预览
+            //1.给file表单元素注册onchange事件
+            $('#inputCover').change(function () {
+                //1.2 获取用户选择的图片
+                var file = this.files[0];
+                //1.3 将文件转为src路径
+                var url = URL.createObjectURL(file);
+                //1.4 将url路径赋值给img标签的src
+                $('.article_cover').attr('src', url);
+            });
+
+
+            //5.发布 文件提交
+            //注意点: 表单按钮 需要阻止默认跳转
+            $('.btn-release').click(function (e) {
+                e.preventDefault();
+                articleEdit('已发布');
+            });
+            $('.btn-draft').click(function (e) {
+                e.preventDefault();
+                articleEdit('草稿');
+            });
+
+
+            function articleEdit(state) {
+                //创建FormData对象：参数是表单dom对象
+                var fd = new FormData($('#form')[0]);
+                /*注意点 
+                (1)formData只能获取表单中有name属性得 元素值
+                (2)如果接口文档得参数  >  formData能够获取得参数值
+                (3)使用formData得append() 方法手动追加参数
+                */
+                fd.append('date', $('#testico').val());
+                fd.append('content', tinymce.activeEditor.getContent());
+                fd.append('state', state);
+                $.ajax({
+                    url: BigNew.article_publish,
+                    type: 'post',
+                    dataType: 'json',
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (backData) {
+                        console.log(backData);
+                        if (backData.code == 200) {
+                            alert('修改成功');
+                            //跳转文章列表
+                            window.location.href = './article_list.html';
+                        }
+                    }
+                });
+            };
+
+        });
+    </script>
 </body>
 
 </html>

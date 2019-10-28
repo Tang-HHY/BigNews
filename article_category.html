@@ -138,20 +138,28 @@
             */
 
             //弹出模态框
+            var flag = false;
             $('#myModal').on('show.bs.modal', function (e) {
                 if (e.relatedTarget == $('#xinzengfenlei')[0]) {
                     //新增逻辑
                     $('.btn-confirm').text('新增');
+                    flag = false;
                 } else {
                     //编辑逻辑
                     $('.btn-confirm').text('编辑');
-                    //取出当前编辑的分类数据 赋值给  模态框元素
+                    //取出当前编辑的分类数据 赋值给 模态框元素
                     $('#recipient-name').val($(e.relatedTarget).parent().prev().prev().text());
                     $('#message-text').val($(e.relatedTarget).parent().prev().text());
                     //取出e.relatedTarget的data-id 传递给模态框的确认按钮
                     $('.btn-confirm').attr('data-id', $(e.relatedTarget).attr('data-id'));
+                    flag = true;
                 }
             });
+            $('#myModal').on('hidden.bs.modal',function(){
+                if(flag){
+                $('.modal-body>form')[0].reset();//清空表单
+                }
+            })
 
             //模态框取消事件
             $('.btn-cancel').on('click', function () {
